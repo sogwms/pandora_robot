@@ -5,9 +5,7 @@ static rt_device_t com1;
 
 static rt_err_t _rx_ind(rt_device_t dev, rt_size_t size)
 {
-    uint8_t buffer;
-    rt_device_read(dev, 0, &buffer, 1);
-    ano_receive_byte(buffer);
+    ano_byte_ready_indicate();
 
     return RT_EOK;
 }
@@ -27,6 +25,13 @@ static int _serial_init(void)
     rt_kprintf("control can use\n");
 
     return RT_EOK;
+}
+
+uint8_t ano_read_byte_port(void)
+{
+    uint8_t temp;
+    rt_device_read(com1, 0, &temp, 1);
+    return temp;
 }
 
 void ano_send_data_port(uint8_t *buffer, uint8_t length)

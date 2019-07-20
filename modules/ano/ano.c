@@ -13,31 +13,33 @@
 #define BYTE2(dwTemp) (*((char *)(&dwTemp) + 2))
 #define BYTE3(dwTemp) (*((char *)(&dwTemp) + 3))
 
-static rt_mq_t ano_send_mq = RT_NULL;
-static rt_mq_t ano_recv_mq = RT_NULL;
+static rt_mutex_t ano_send_mutex = RT_NULL;
 static rt_sem_t ano_ready_sem = RT_NULL;
-
 static rt_thread_t ano_thread;
 
+static void ano_parse_frame(uint8_t *buffer, uint8_t length);
+
+extern uint8_t ano_read_byte_port(void);
 extern void ano_send_data_port(uint8_t *buffer, uint8_t length);
 
 void _send_data(uint8_t *buffer, uint8_t length)
 {
-	if (ano_send_mq != RT_NULL)
-	{		
-		rt_mq_send(ano_send_mq, buffer, length);
-		rt_sem_release(ano_ready_sem);
+	if (ano_send_mutex != RT_NULL)
+	{
+		rt_mutex_take(ano_send_mutex, RT_WAITING_FOREVER);
+		ano_send_data_port(buffer, length);
+		rt_mutex_release(ano_send_mutex);
 	}
 }
 
-void _recv_data(uint8_t *buffer, uint8_t length)
-{
-	if (ano_recv_mq != RT_NULL)
-	{
-		rt_mq_send(ano_recv_mq, buffer, length);
-		rt_sem_release(ano_ready_sem);
-	}
-}
+// void _recv_data(uint8_t *buffer, uint8_t length)
+// {
+// //	if (ano_recv_mq != RT_NULL)
+// //	{
+// //		rt_mq_send(ano_recv_mq, buffer, length);
+// //		rt_sem_release(ano_ready_sem);
+// //	}
+// }
 
 static void ano_send_check(uint8_t head, uint8_t check_sum)
 {
@@ -58,8 +60,8 @@ static void ano_send_check(uint8_t head, uint8_t check_sum)
 	_send_data(data_to_send, 7);
 }
 
-void ano_receive_byte(uint8_t data)
-{
+int ano_receive_byte(uint8_t data)
+{	
 	static uint8_t RxBuffer[50];
 	static uint8_t _data_len = 0, _data_cnt = 0;
 	static uint8_t state = 0;
@@ -97,16 +99,19 @@ void ano_receive_byte(uint8_t data)
 	{
 		state = 0;
 		RxBuffer[4 + _data_cnt] = data;
-		_recv_data(RxBuffer, _data_cnt + 5);
+		ano_parse_frame(RxBuffer, _data_cnt + 5);
+		return 1;
 	}
 	else
 		state = 0;
+	
+	return 0;
 }
 /////////////////////////////////////////////////////////////////////////////////////
 //Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
 //校验通过后对数据进行解析，实现相应功能
 //此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
-void ano_parse_frame(uint8_t *buffer, uint8_t length)
+static void ano_parse_frame(uint8_t *buffer, uint8_t length)
 {
 	uint8_t sum = 0;
 	for (uint8_t i = 0; i < (length - 1); i++)
@@ -491,6 +496,16 @@ void ano_send_pid(uint8_t group, float p1_p, float p1_i, float p1_d, float p2_p,
 	_send_data(data_to_send, _cnt);
 }
 
+void ano_byte_ready_indicate(void)
+{
+	rt_sem_release(ano_ready_sem);
+}
+
+// uint8_t ano_read_byte_port(void)
+// {
+// 	;
+// }
+
 // void ano_send_data_port(uint8_t *buffer, uint8_t length)
 // {
 // 	;
@@ -498,44 +513,38 @@ void ano_send_pid(uint8_t group, float p1_p, float p1_i, float p1_d, float p2_p,
 
 void ano_thread_entry(void *param)
 {
-	uint8_t buffer[MQ_MSG_SIZE];
-
 	while(1)
 	{
-		if (rt_mq_recv(ano_send_mq, buffer, MQ_MSG_SIZE, 0) == RT_EOK)
-		{
-			ano_send_data_port(buffer, buffer[3]+5);
-		}
-		
-		if (rt_mq_recv(ano_recv_mq, buffer, MQ_MSG_SIZE, 0) == RT_EOK)
-		{
-			ano_parse_frame(buffer, buffer[3]+5);
-		}
-		
 		rt_sem_take(ano_ready_sem, RT_WAITING_FOREVER);
+		ano_receive_byte(ano_read_byte_port());
 	}
 }
 
 int ano_init(void *param)
 {
+	ano_send_mutex = rt_mutex_create("anoSend", RT_IPC_FLAG_FIFO);
+	if (ano_send_mutex == RT_NULL)
+	{
+		rt_kprintf("Can't create mutex for ano\n");
+	}
 	ano_ready_sem = rt_sem_create("anoReady", 0, RT_IPC_FLAG_FIFO);
 	if (ano_ready_sem == RT_NULL)
 	{
 		rt_kprintf("Can't create sem for ano\n");
 		return RT_ERROR;
 	}
-	ano_send_mq = rt_mq_create("anoSend", MQ_MSG_SIZE, MQ_MAX_MSGS, RT_IPC_FLAG_FIFO);
-	if (ano_send_mq == RT_NULL)
-	{
-		rt_kprintf("Can't create send_mq for ano\n");
-		return RT_ERROR;
-	}
-	ano_recv_mq = rt_mq_create("anoRecv", MQ_MSG_SIZE, MQ_MAX_MSGS, RT_IPC_FLAG_FIFO);
-	if (ano_recv_mq == RT_NULL)
-	{
-		rt_kprintf("Can't create recv_mq for ano\n");
-		return RT_ERROR;
-	}
+	// ano_send_mq = rt_mq_create("anoSend", MQ_MSG_SIZE, MQ_MAX_MSGS, RT_IPC_FLAG_FIFO);
+	// if (ano_send_mq == RT_NULL)
+	// {
+	// 	rt_kprintf("Can't create send_mq for ano\n");
+	// 	return RT_ERROR;
+	// }
+	// ano_recv_mq = rt_mq_create("anoRecv", MQ_MSG_SIZE, MQ_MAX_MSGS, RT_IPC_FLAG_FIFO);
+	// if (ano_recv_mq == RT_NULL)
+	// {
+	// 	rt_kprintf("Can't create recv_mq for ano\n");
+	// 	return RT_ERROR;
+	// }
 
 	ano_thread = rt_thread_create("ano", ano_thread_entry, RT_NULL, THREAD_STACK_SIZE, THREAD_PRIORITY, THREAD_TICK);
 	if (ano_thread == RT_NULL)

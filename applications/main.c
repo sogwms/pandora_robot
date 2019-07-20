@@ -11,7 +11,7 @@
 #include <rtthread.h>
 #include <rtdevice.h>
 #include <board.h>
-
+#include <ano.h>
 /* defined the LED0 pin: PE7 */
 #define LED0_PIN    GET_PIN(E, 7)
 
@@ -29,9 +29,10 @@ int main(void)
     while (count++)
     {
         rt_pin_write(LED0_PIN, PIN_HIGH);
-        rt_thread_mdelay(500);
+        rt_thread_mdelay(50);
         rt_pin_write(LED0_PIN, PIN_LOW);
-        rt_thread_mdelay(500);
+        rt_thread_mdelay(50);
+        ano_send_senser(count, 0,0,0,0,0,0,0,0,0);
     }
 
     return RT_EOK;
