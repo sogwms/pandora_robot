@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER, STM32L475xx</Define>
               <Undefine></Undefine>
-              <IncludePath>.;rt-thread\include;.;applications;board;board\CubeMX_Config\Inc;board\ports;libraries\HAL_Drivers;libraries\HAL_Drivers\config;modules\ano;.;packages\rt-robot-latest\chassis;packages\rt-robot-latest\encoder;packages\rt-robot-latest\kinematics;packages\rt-robot-latest\modules\motor;packages\rt-robot-latest\modules\sensors;packages\rt-robot-latest\motor;packages\rt-robot-latest\pid;packages\rt-robot-latest\wheel;rt-thread\libcpu\arm\cortex-m4;rt-thread\libcpu\arm\common;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\spi;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\finsh;libraries\STM32L4xx_HAL\STM32L4xx_HAL_Driver\Inc;libraries\STM32L4xx_HAL\CMSIS\Device\ST\STM32L4xx\Include;libraries\STM32L4xx_HAL\CMSIS\Include</IncludePath>
+              <IncludePath>.;rt-thread\include;.;applications;board;board\CubeMX_Config\Inc;board\ports;libraries\HAL_Drivers;libraries\HAL_Drivers\config;modules\ano;.;modules\port;.;modules\ps2;packages\rt-robot-latest\chassis;packages\rt-robot-latest\encoder;packages\rt-robot-latest\kinematics;packages\rt-robot-latest\modules\motor;packages\rt-robot-latest\modules\sensors;packages\rt-robot-latest\motor;packages\rt-robot-latest\pid;packages\rt-robot-latest\wheel;rt-thread\libcpu\arm\cortex-m4;rt-thread\libcpu\arm\common;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\drivers\spi;rt-thread\components\drivers\include;rt-thread\components\drivers\include;rt-thread\components\finsh;libraries\STM32L4xx_HAL\STM32L4xx_HAL_Driver\Inc;libraries\STM32L4xx_HAL\CMSIS\Device\ST\STM32L4xx\Include;libraries\STM32L4xx_HAL\CMSIS\Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -525,7 +525,7 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Middle</GroupName>
+          <GroupName>modules</GroupName>
           <Files>
             <File>
               <FileName>ano.c</FileName>
@@ -535,7 +535,22 @@
             <File>
               <FileName>ano_port.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\modules\port\ano_port.c</FilePath>
+              <FilePath>modules\port\ano_port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>moudles</GroupName>
+          <Files>
+            <File>
+              <FileName>ps2_controller.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>modules\ps2\ps2_controller.c</FilePath>
+            </File>
+            <File>
+              <FileName>ps2_controller_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>modules\ps2\ps2_controller_port.c</FilePath>
             </File>
           </Files>
         </Group>
