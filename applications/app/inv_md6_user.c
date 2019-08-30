@@ -137,12 +137,11 @@ static struct platform_data_s compass_pdata = {
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 /* ---------------------------------------------------------------------------*/
+// float tmp = (int)(q16 >> 16) + (q16 & 0xFFFF) * 0.00001525f;
 
 static float q16_to_float(int32_t q16)
 {
-    // float tmp = (int)(q16 >> 16) + (q16 & 0xFFFF) * 0.00001525f;
-    float tmp = (float)(q16 / 65536.0f);
-    return tmp;
+    return (float)(q16 / 65536.0f);
 }
 
 float inv_yaw_state;
@@ -214,7 +213,6 @@ static void read_from_mpl(void)
                 float_data[2] = q16_to_float(data[2]);
                 inv_yaw_state = float_data[2];
                 ano_send_status(float_data[0], float_data[1], float_data[2], 0, 0, 0);
-                // rt_kprintf("\rr-p-y: %3d %3d %3d", (data[0]>>16), (data[1] >> 16), (data[2]>>16));
                 //eMPL_send_data(PACKET_DATA_EULER, data);
             }
         // }
